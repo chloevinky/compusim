@@ -9,6 +9,9 @@ Generate period-accurate computer store advertisements from any year (1960-2025)
 - 🎨 **Image generation**: DALL-E 3 creates retro computer product images
 - 🎭 **Era-specific styling**: Visual design changes based on the selected decade (60s, 70s, 80s, 90s, 2000s, 2010s, 2020s)
 - 💰 **Inflation-adjusted pricing**: Shows both original and 2025-equivalent prices
+- 📊 **Detailed specifications**: Comprehensive computer specs including CPU, RAM, storage, display, graphics, ports, and OS
+- ✨ **Feature highlights**: Key selling points for each computer
+- 🌐 **GitHub Pages ready**: Deploy to GitHub Pages with Vercel/Netlify proxy
 
 ## Why a Proxy Server?
 
@@ -88,6 +91,70 @@ The app will:
 3. Generate retro computer images with DALL-E (one at a time)
 4. Update the ad as each image completes
 
+## Deploying to GitHub Pages
+
+You can host this app on GitHub Pages with a separate proxy deployment on Vercel or Netlify.
+
+📚 **For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md)**
+
+### Quick Start
+
+### Option 1: Deploy to Vercel (Recommended)
+
+1. **Fork this repository** to your GitHub account
+
+2. **Sign up for Vercel** at [vercel.com](https://vercel.com/)
+
+3. **Import your forked repository** to Vercel:
+   - Click "New Project"
+   - Import your GitHub repository
+   - Click "Deploy"
+
+4. **Get your Vercel URL** (e.g., `https://your-app.vercel.app`)
+
+5. **Configure the proxy URL**:
+   - Edit `config.js` in your repository
+   - Update the `ANTHROPIC_PROXY_URL`:
+     ```javascript
+     window.ANTHROPIC_PROXY_URL = 'https://your-app.vercel.app/api/anthropic';
+     ```
+   - Commit and push this change
+
+6. **Enable GitHub Pages**:
+   - Go to your repository Settings → Pages
+   - Source: Deploy from branch
+   - Branch: `main` (or your default branch)
+   - Click Save
+
+7. **Access your deployed app** at `https://yourusername.github.io/compusim/`
+
+### Option 2: Deploy Proxy to Netlify
+
+1. **Sign up for Netlify** at [netlify.com](https://www.netlify.com/)
+
+2. **Create a Netlify function**:
+   - Netlify automatically detects functions in the `api/` directory
+   - Deploy your repository to Netlify
+
+3. **Get your Netlify URL** (e.g., `https://your-app.netlify.app`)
+
+4. **Configure and enable GitHub Pages** (same as Vercel steps 5-7)
+
+### Option 3: Local Development Only
+
+If you only want to run locally:
+- Use the `node proxy-server.js` method (see Usage section above)
+- No additional configuration needed
+- Access at `http://localhost:3000`
+
+### Deployment Files
+
+The following files enable GitHub Pages deployment:
+
+- **`api/anthropic.js`**: Vercel/Netlify serverless function for API proxy
+- **`vercel.json`**: Vercel configuration file
+- **`config.js`**: Configuration file for proxy URL (edit this for deployment)
+
 ## Troubleshooting
 
 ### Error: "Failed to fetch"
@@ -150,7 +217,11 @@ This will test:
 ```
 compusim/
 ├── index.html          # Main application (single-page app)
-├── proxy-server.js     # Node.js proxy server for Anthropic API
+├── proxy-server.js     # Node.js proxy server for local development
+├── config.js           # Configuration file (edit for deployment)
+├── vercel.json         # Vercel deployment configuration
+├── api/
+│   └── anthropic.js    # Vercel/Netlify serverless function
 ├── test-fetch.html     # Diagnostic tool for troubleshooting
 └── README.md          # This file
 ```

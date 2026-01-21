@@ -317,8 +317,15 @@
         .product {
             border: 1px solid #ddd;
             padding: 20px;
-            border-radius: 5px;
+            border-radius: 8px;
             background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .product:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
         }
 
         .era-60s .product,
@@ -378,6 +385,117 @@
             font-size: 0.9em;
             margin-bottom: 15px;
             line-height: 1.6;
+        }
+
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 0.85em;
+        }
+
+        .spec-item {
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #667eea;
+        }
+
+        .era-60s .spec-item,
+        .era-70s .spec-item {
+            background: #fff;
+            border: 1px solid #000;
+            border-left: 3px solid #000;
+            border-radius: 0;
+        }
+
+        .era-80s .spec-item {
+            background: #1a1a1a;
+            border: 1px solid #0ff;
+            border-left: 3px solid #ff0;
+            color: #0ff;
+        }
+
+        .era-90s .spec-item {
+            background: #ffe;
+            border: 2px solid #00f;
+            border-left: 3px solid #f00;
+        }
+
+        .spec-label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 2px;
+            font-size: 0.85em;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .spec-value {
+            font-size: 1em;
+        }
+
+        .era-80s .spec-label {
+            color: #ff0;
+        }
+
+        .features-list {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f0f7ff;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .era-60s .features-list,
+        .era-70s .features-list {
+            background: #fff;
+            border: 2px solid #000;
+            border-radius: 0;
+        }
+
+        .era-80s .features-list {
+            background: #000;
+            border: 2px solid #ff0;
+            color: #fff;
+        }
+
+        .era-90s .features-list {
+            background: #ffd;
+            border: 2px dashed #00f;
+        }
+
+        .features-list h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .era-80s .features-list h4 {
+            color: #0ff;
+        }
+
+        .era-90s .features-list h4 {
+            color: #00f;
+        }
+
+        .features-list ul {
+            margin: 0;
+            padding-left: 20px;
+            list-style: disc;
+        }
+
+        .features-list li {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .era-80s .features-list li {
+            color: #0ff;
         }
 
         .product-price {
@@ -461,6 +579,15 @@
             .store-name {
                 font-size: 2em !important;
             }
+
+            .spec-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .spec-item {
+                padding: 6px;
+            }
         }
 
         .image-placeholder {
@@ -481,8 +608,10 @@
     <div class="container">
         <div class="header">
             <h1>🖥️ Retro Computer Store Ad Generator</h1>
-            <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9em;">
-                <strong>⚠️ Important:</strong> Run <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 3px;">node proxy-server.js</code> and access at <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 3px;">http://localhost:3000</code>
+            <div style="background: #e7f3ff; border: 1px solid #2196F3; padding: 15px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9em;">
+                <strong>ℹ️ Setup:</strong><br>
+                <strong>Local:</strong> Run <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 3px;">node proxy-server.js</code> and access at <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 3px;">http://localhost:3000</code><br>
+                <strong>GitHub Pages:</strong> Deploy the proxy to Vercel/Netlify (see README.md for instructions)
             </div>
 
             <div class="setup-form">
@@ -523,7 +652,16 @@
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script>
+        // Configuration: Proxy URL for Anthropic API
+        // For local development: use '/api/anthropic' (requires proxy-server.js)
+        // For GitHub Pages deployment: use your Vercel/Netlify function URL
+        // Example: 'https://your-app.vercel.app/api/anthropic'
+        const PROXY_URL = window.location.hostname === 'localhost'
+            ? '/api/anthropic'
+            : (window.ANTHROPIC_PROXY_URL || '/api/anthropic');
+
         // Populate year selector
         const yearSelect = document.getElementById('year');
         for (let year = 2025; year >= 1960; year--) {
@@ -604,8 +742,18 @@ Your response must be a valid JSON object with this exact structure:
     "slogan": "string",
     "computers": [
         {
-            "name": "string",
-            "specs": "string (2-3 lines of key specs)",
+            "name": "string (actual product name)",
+            "detailedSpecs": {
+                "processor": "string (CPU model and speed)",
+                "memory": "string (RAM amount and type)",
+                "storage": "string (storage type and capacity)",
+                "display": "string (screen size and type)",
+                "graphics": "string (GPU or graphics capabilities)",
+                "ports": "string (available ports/connectivity)",
+                "os": "string (operating system)",
+                "other": "string (other notable specs)"
+            },
+            "features": ["string", "string", "string"],
             "originalPrice": "string (e.g., '$1,299')",
             "price2025": "string (inflation-adjusted price)",
             "imagePrompt": "string (detailed description for image generation)"
@@ -616,21 +764,27 @@ Your response must be a valid JSON object with this exact structure:
 
 Requirements:
 1. Include 3-5 computers that were actually available in ${year}
-2. Use authentic product names and specs from that year
-3. Original prices should be period-accurate
-4. Calculate realistic 2025 inflation-adjusted prices
-5. Store name and slogan should match ${year} marketing style
-6. Ad copy should use language and style typical of ${era} advertising
-7. Image prompts should describe the actual appearance of each computer model
-8. For the ${era} era, ensure:
-   - 60s-70s: Professional, technical language; simple descriptions
-   - 80s: Enthusiastic, futuristic language; bold claims
-   - 90s: Casual, friendly language; emphasis on multimedia/games
-   - 2000s+: Modern, feature-focused language; sleek design emphasis
+2. Use authentic product names and detailed specs from that year
+3. detailedSpecs should include period-accurate specifications:
+   - For 1960s-1970s: Focus on processor type, memory in KB, storage type, terminal specs
+   - For 1980s: Include processor speed in MHz, RAM in KB/MB, floppy drives, monitor specs
+   - For 1990s: Include MHz processors, MB of RAM, hard drive sizes, CD-ROM, graphics cards
+   - For 2000s+: Include GHz processors, GB RAM/storage, dedicated graphics, modern ports
+4. features should list 3-5 key selling points for each computer (what makes it special)
+5. Original prices should be period-accurate
+6. Calculate realistic 2025 inflation-adjusted prices
+7. Store name and slogan should match ${year} marketing style
+8. Ad copy should use language and style typical of ${era} advertising
+9. Image prompts should describe the actual appearance of each computer model
+10. For the ${era} era, ensure:
+    - 60s-70s: Professional, technical language; emphasis on computing power and reliability
+    - 80s: Enthusiastic, futuristic language; bold claims about performance
+    - 90s: Casual, friendly language; emphasis on multimedia, games, internet
+    - 2000s+: Modern, feature-focused language; sleek design emphasis
 
 Return ONLY the JSON object, no additional text.`;
 
-            const response = await fetchWithTimeout('/api/anthropic', {
+            const response = await fetchWithTimeout(PROXY_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -764,11 +918,46 @@ Return ONLY the JSON object, no additional text.`;
                     imageHtml = `<div class="image-placeholder">Image generation in progress...</div>`;
                 }
 
+                // Build specs display
+                let specsHtml = '';
+                if (computer.detailedSpecs) {
+                    specsHtml = '<div class="spec-grid">';
+                    const specs = computer.detailedSpecs;
+
+                    if (specs.processor) specsHtml += `<div class="spec-item"><span class="spec-label">Processor</span><span class="spec-value">${specs.processor}</span></div>`;
+                    if (specs.memory) specsHtml += `<div class="spec-item"><span class="spec-label">Memory</span><span class="spec-value">${specs.memory}</span></div>`;
+                    if (specs.storage) specsHtml += `<div class="spec-item"><span class="spec-label">Storage</span><span class="spec-value">${specs.storage}</span></div>`;
+                    if (specs.display) specsHtml += `<div class="spec-item"><span class="spec-label">Display</span><span class="spec-value">${specs.display}</span></div>`;
+                    if (specs.graphics) specsHtml += `<div class="spec-item"><span class="spec-label">Graphics</span><span class="spec-value">${specs.graphics}</span></div>`;
+                    if (specs.ports) specsHtml += `<div class="spec-item"><span class="spec-label">Ports</span><span class="spec-value">${specs.ports}</span></div>`;
+                    if (specs.os) specsHtml += `<div class="spec-item"><span class="spec-label">OS</span><span class="spec-value">${specs.os}</span></div>`;
+                    if (specs.other) specsHtml += `<div class="spec-item"><span class="spec-label">Additional</span><span class="spec-value">${specs.other}</span></div>`;
+
+                    specsHtml += '</div>';
+                } else if (computer.specs) {
+                    // Fallback for old format
+                    specsHtml = `<div class="product-specs">${computer.specs}</div>`;
+                }
+
+                // Build features list
+                let featuresHtml = '';
+                if (computer.features && computer.features.length > 0) {
+                    featuresHtml = `
+                        <div class="features-list">
+                            <h4>Key Features</h4>
+                            <ul>
+                                ${computer.features.map(f => `<li>${f}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }
+
                 html += `
                     <div class="product">
                         ${imageHtml}
                         <div class="product-name">${computer.name}</div>
-                        <div class="product-specs">${computer.specs}</div>
+                        ${specsHtml}
+                        ${featuresHtml}
                         <div class="product-price">${computer.originalPrice}</div>
                         <div class="product-price-modern">${computer.price2025} in 2025 dollars</div>
                     </div>
