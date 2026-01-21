@@ -481,6 +481,9 @@
     <div class="container">
         <div class="header">
             <h1>🖥️ Retro Computer Store Ad Generator</h1>
+            <div style="background: #fff3cd; border: 1px solid #ffc107; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-size: 0.9em;">
+                <strong>⚠️ Important:</strong> Run <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 3px;">node proxy-server.js</code> and access at <code style="background: #f8f9fa; padding: 2px 6px; border-radius: 3px;">http://localhost:3000</code>
+            </div>
 
             <div class="setup-form">
                 <div class="form-group">
@@ -559,6 +562,36 @@
             hideLoading();
         }
 
+        // Helper function for fetch with timeout and better error handling
+        async function fetchWithTimeout(url, options = {}, timeout = 30000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+            try {
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                return response;
+            } catch (error) {
+                clearTimeout(timeoutId);
+
+                // Provide specific error messages
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timed out. Please check your internet connection and try again.');
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                    throw new Error('Network error: Unable to reach the API.\n\n' +
+                        'IMPORTANT: This app requires the proxy server to bypass CORS restrictions.\n\n' +
+                        'Please run: node proxy-server.js\n' +
+                        'Then access the app at: http://localhost:3000\n\n' +
+                        'The proxy server handles Anthropic API requests that are blocked by browser CORS policies.');
+                } else {
+                    throw error;
+                }
+            }
+        }
+
         // Call Claude API
         async function generateAdContent(year, apiKey) {
             const era = getEra(year);
@@ -597,7 +630,7 @@ Requirements:
 
 Return ONLY the JSON object, no additional text.`;
 
-            const response = await fetch('https://api.anthropic.com/v1/messages', {
+            const response = await fetchWithTimeout('/api/anthropic', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -612,11 +645,27 @@ Return ONLY the JSON object, no additional text.`;
                         content: prompt
                     }]
                 })
-            });
+            }, 30000);
 
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error?.message || 'Failed to generate ad content');
+                let errorMessage = 'Failed to generate ad content';
+                try {
+                    const error = await response.json();
+                    errorMessage = error.error?.message || errorMessage;
+
+                    // Provide helpful messages for common errors
+                    if (response.status === 401) {
+                        errorMessage = 'Invalid Anthropic API key. Please check your API key and try again.';
+                    } else if (response.status === 429) {
+                        errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+                    } else if (response.status === 400) {
+                        errorMessage = 'Invalid request to Anthropic API: ' + errorMessage;
+                    }
+                } catch (e) {
+                    // If we can't parse the error response, use the default message
+                    errorMessage = `API request failed with status ${response.status}: ${response.statusText}`;
+                }
+                throw new Error(errorMessage);
             }
 
             const data = await response.json();
@@ -634,7 +683,7 @@ Return ONLY the JSON object, no additional text.`;
         // Call OpenAI DALL-E API
         async function generateImage(prompt, apiKey) {
             try {
-                const response = await fetch('https://api.openai.com/v1/images/generations', {
+                const response = await fetchWithTimeout('https://api.openai.com/v1/images/generations', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -647,19 +696,34 @@ Return ONLY the JSON object, no additional text.`;
                         size: '1024x1024',
                         quality: 'standard'
                     })
-                });
+                }, 60000); // Longer timeout for image generation
 
                 if (!response.ok) {
-                    const error = await response.json();
-                    console.error('Image generation failed:', error);
-                    return null;
+                    let errorMessage = 'Image generation failed';
+                    try {
+                        const error = await response.json();
+                        errorMessage = error.error?.message || errorMessage;
+
+                        // Provide helpful messages for common errors
+                        if (response.status === 401) {
+                            errorMessage = 'Invalid OpenAI API key';
+                        } else if (response.status === 429) {
+                            errorMessage = 'OpenAI rate limit exceeded';
+                        } else if (response.status === 400) {
+                            errorMessage = 'Invalid image generation request: ' + errorMessage;
+                        }
+                    } catch (e) {
+                        errorMessage = `Image API request failed with status ${response.status}`;
+                    }
+                    console.error('Image generation failed:', errorMessage);
+                    return { error: errorMessage };
                 }
 
                 const data = await response.json();
-                return data.data[0].url;
+                return { url: data.data[0].url };
             } catch (error) {
                 console.error('Image generation error:', error);
-                return null;
+                return { error: error.message };
             }
         }
 
@@ -682,10 +746,23 @@ Return ONLY the JSON object, no additional text.`;
             `;
 
             adData.computers.forEach((computer, index) => {
-                const imageUrl = images[index];
-                const imageHtml = imageUrl
-                    ? `<img src="${imageUrl}" alt="${computer.name}" class="product-image">`
-                    : `<div class="image-placeholder">Image generation in progress...</div>`;
+                const imageData = images[index];
+                let imageHtml;
+
+                if (!imageData) {
+                    imageHtml = `<div class="image-placeholder">Image generation in progress...</div>`;
+                } else if (typeof imageData === 'string') {
+                    // It's a URL string
+                    imageHtml = `<img src="${imageData}" alt="${computer.name}" class="product-image">`;
+                } else if (imageData.url) {
+                    // It's an object with url property
+                    imageHtml = `<img src="${imageData.url}" alt="${computer.name}" class="product-image">`;
+                } else if (imageData.error) {
+                    // It's an error object
+                    imageHtml = `<div class="image-placeholder" style="color: #ff6b6b; font-size: 0.85em; padding: 10px;">⚠️ Image generation failed<br><small>${imageData.error}</small></div>`;
+                } else {
+                    imageHtml = `<div class="image-placeholder">Image generation in progress...</div>`;
+                }
 
                 html += `
                     <div class="product">
@@ -748,10 +825,17 @@ Return ONLY the JSON object, no additional text.`;
                     const computer = adData.computers[i];
                     const imagePrompt = `Professional product photography of a ${computer.imagePrompt}, isolated on white background, high quality, detailed, studio lighting, technology advertisement photo`;
 
-                    const imageUrl = await generateImage(imagePrompt, openaiKey);
-                    if (imageUrl) {
-                        images[i] = imageUrl;
+                    showLoading(`Generating image ${i + 1} of ${adData.computers.length}: ${computer.name}...`);
+                    const result = await generateImage(imagePrompt, openaiKey);
+
+                    if (result.url) {
+                        images[i] = result.url;
                         // Update ad with new image
+                        renderAd(adData, parseInt(year), images);
+                    } else if (result.error) {
+                        // Show error for this specific image but continue
+                        console.warn(`Failed to generate image for ${computer.name}: ${result.error}`);
+                        images[i] = { error: result.error };
                         renderAd(adData, parseInt(year), images);
                     }
                 }
