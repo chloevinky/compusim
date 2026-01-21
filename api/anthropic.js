@@ -35,28 +35,48 @@ export default async function handler(req, res) {
         }
 
         // Forward request to Anthropic API
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': apiKey,
-                'anthropic-version': '2023-06-01'
-            },
-            body: JSON.stringify({
-                model,
-                max_tokens,
-                messages
-            })
-        });
+        // Note: Detailed content generation may take up to 60 seconds
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 65000); // 65 second timeout
 
-        const data = await response.json();
+        try {
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01'
+                },
+                body: JSON.stringify({
+                    model,
+                    max_tokens,
+                    messages
+                }),
+                signal: controller.signal
+            });
 
-        if (!response.ok) {
-            res.status(response.status).json(data);
-            return;
+            clearTimeout(timeoutId);
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                res.status(response.status).json(data);
+                return;
+            }
+
+            res.status(200).json(data);
+        } catch (fetchError) {
+            clearTimeout(timeoutId);
+            if (fetchError.name === 'AbortError') {
+                res.status(504).json({
+                    error: {
+                        message: 'Request to Anthropic API timed out. Please try again.'
+                    }
+                });
+                return;
+            }
+            throw fetchError;
         }
-
-        res.status(200).json(data);
     } catch (error) {
         console.error('Proxy error:', error);
         res.status(500).json({

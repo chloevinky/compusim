@@ -80,6 +80,17 @@ function proxyToAnthropic(req, res) {
                 proxyRes.pipe(res);
             });
 
+            // Set timeout for detailed content generation (65 seconds)
+            proxyReq.setTimeout(65000, () => {
+                proxyReq.destroy();
+                console.error('[PROXY] Request timeout');
+                res.writeHead(504, {
+                    'Content-Type': 'application/json',
+                    'Access-Control-Allow-Origin': '*'
+                });
+                res.end(JSON.stringify({ error: { message: 'Request to Anthropic API timed out. Please try again.' } }));
+            });
+
             proxyReq.on('error', (error) => {
                 console.error('[PROXY] Error:', error);
                 res.writeHead(500, {

@@ -763,24 +763,13 @@ Your response must be a valid JSON object with this exact structure:
 }
 
 Requirements:
-1. Include 3-5 computers that were actually available in ${year}
-2. Use authentic product names and detailed specs from that year
-3. detailedSpecs should include period-accurate specifications:
-   - For 1960s-1970s: Focus on processor type, memory in KB, storage type, terminal specs
-   - For 1980s: Include processor speed in MHz, RAM in KB/MB, floppy drives, monitor specs
-   - For 1990s: Include MHz processors, MB of RAM, hard drive sizes, CD-ROM, graphics cards
-   - For 2000s+: Include GHz processors, GB RAM/storage, dedicated graphics, modern ports
-4. features should list 3-5 key selling points for each computer (what makes it special)
-5. Original prices should be period-accurate
-6. Calculate realistic 2025 inflation-adjusted prices
-7. Store name and slogan should match ${year} marketing style
-8. Ad copy should use language and style typical of ${era} advertising
-9. Image prompts should describe the actual appearance of each computer model
-10. For the ${era} era, ensure:
-    - 60s-70s: Professional, technical language; emphasis on computing power and reliability
-    - 80s: Enthusiastic, futuristic language; bold claims about performance
-    - 90s: Casual, friendly language; emphasis on multimedia, games, internet
-    - 2000s+: Modern, feature-focused language; sleek design emphasis
+1. Include 3-4 computers that were actually available in ${year}
+2. Use authentic product names with period-accurate specs
+3. Fill all detailedSpecs fields with era-appropriate information
+4. List exactly 3-4 key features for each computer
+5. Use period-accurate original prices and calculate realistic 2025 inflation-adjusted prices
+6. Match ${year}/${era} marketing style in store name, slogan, and ad copy
+7. For image prompts, describe the actual physical appearance of each computer
 
 Return ONLY the JSON object, no additional text.`;
 
@@ -799,7 +788,7 @@ Return ONLY the JSON object, no additional text.`;
                         content: prompt
                     }]
                 })
-            }, 30000);
+            }, 60000); // Increased to 60 seconds for detailed content generation
 
             if (!response.ok) {
                 let errorMessage = 'Failed to generate ad content';
@@ -999,7 +988,7 @@ Return ONLY the JSON object, no additional text.`;
 
             try {
                 // Step 1: Generate ad content with Claude
-                showLoading('Consulting with Claude to create period-accurate content...');
+                showLoading('Generating detailed period-accurate content with Claude (this may take up to 60 seconds)...');
                 const adData = await generateAdContent(parseInt(year), anthropicKey);
 
                 // Render ad without images first
